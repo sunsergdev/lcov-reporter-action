@@ -1,6 +1,6 @@
 import { promises as fs } from "fs"
 import core from "@actions/core"
-import { GitHub, context } from "@actions/github"
+import { GitHub, context, getOctokit } from "@actions/github"
 import path from "path"
 
 import { parse } from "./lcov"
@@ -13,7 +13,7 @@ const MAX_COMMENT_CHARS = 65536
 
 async function main() {
 	const token = core.getInput("github-token")
-	const githubClient = new GitHub(token)
+	const githubClient = new getOctokit(token)
 	const workingDir = core.getInput('working-directory') || './';	
 	const lcovFile = path.join(workingDir, core.getInput("lcov-file") || "./coverage/lcov.info")
 	const baseFile = core.getInput("lcov-base")
@@ -68,14 +68,14 @@ async function main() {
 	}
 
 	if (context.eventName === "pull_request") {
-		await githubClient.issues.createComment({
+		await githubClient.rest.issues.createComment({
 			repo: context.repo.repo,
 			owner: context.repo.owner,
 			issue_number: context.payload.pull_request.number,
 			body: body,
 		})
 	} else if (context.eventName === "push") {
-		await githubClient.repos.createCommitComment({
+		await githubClient.rest.repos.createCommitComment({
 			repo: context.repo.repo,
 			owner: context.repo.owner,
 			commit_sha: options.commit,
